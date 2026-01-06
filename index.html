@@ -14,6 +14,8 @@
             overscroll-behavior: none;
             background-color: #FDF4E3;
             height: 100vh;
+            /* iPad等のアドレスバー対策: dvhを使用 */
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -28,17 +30,19 @@
             font-weight: 800;
         }
 
-        /* ユーティリティ */
-        .hidden { display: none !important; }
+        .hidden {
+            display: none !important;
+        }
 
-        /* レイアウト構造 */
         .app-container {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            height: 100%;
             width: 100%;
+            height: 100%;
             padding: 0.5rem;
             box-sizing: border-box;
+            overflow: hidden; /* コンテナ自体は溢れさせない */
         }
 
         /* 左パネル */
@@ -67,6 +71,25 @@
             width: 100%;
             max-width: 1200px;
             margin: 0 auto;
+            /* 中身が溢れたらスクロールさせる */
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 0.25rem; /* 少し詰める */
+        }
+
+        #num-bar {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding-bottom: 0.5rem;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
         }
 
         .top-controls {
@@ -74,7 +97,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 0.5rem; /* パディング調整 */
         }
 
         /* キャンバスを表示するメインエリア */
@@ -82,13 +105,14 @@
             flex: 1;
             position: relative;
             width: 100%;
-            height: 100%;
-            min-height: 0;
+            /* min-height は確保しつつ、flexで伸縮 */
+            min-height: 200px; 
             padding: 4px;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* はみ出し防止 */
+            /* はみ出し防止は解除し、practice-areaでスクロールさせる */
+            /* overflow: hidden; */ 
         }
 
         /* モードごとのコンテナ */
@@ -120,7 +144,6 @@
             box-sizing: border-box;
         }
 
-        /* グリッドレイアウト定義 */
         .grid-5x2 {
             grid-template-columns: repeat(5, 1fr);
             grid-template-rows: repeat(2, 1fr);
@@ -130,7 +153,6 @@
             grid-template-rows: repeat(5, 1fr);
         }
 
-        /* グリッドアイテム */
         .grid-item-common {
             position: relative;
             width: 100%;
@@ -139,10 +161,9 @@
             border-radius: 0.5rem;
             border: 2px solid #FCD34D;
             overflow: hidden;
-            display: flex; /* Canvasをいっぱいに広げるため */
+            display: flex; 
         }
 
-        /* Canvas自体 */
         .canvas-layer {
             position: absolute;
             top: 0;
@@ -154,12 +175,12 @@
 
         /* UIパーツ */
         .num-btn {
-            width: 3rem;
-            height: 3rem;
+            width: 2.8rem; /* 少し小さく */
+            height: 2.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             background-color: white;
             border: 3px solid #FCD34D;
@@ -198,13 +219,8 @@
         .bottom-controls {
             flex: 0 0 auto;
             padding: 0.5rem 1rem;
-        }
-
-        #num-bar {
-            display: flex;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            overflow-x: auto;
+            /* 下部に少し余裕を持たせる */
+            padding-bottom: 2rem; 
         }
 
         /* 横向きレイアウト */
@@ -213,12 +229,15 @@
                 flex-direction: row;
             }
             .left-panel {
-                width: 300px;
+                width: 250px; /* 幅調整 */
                 justify-content: center;
             }
             #num-bar {
                 flex-wrap: wrap;
                 justify-content: center;
+            }
+            .bottom-controls {
+                padding-bottom: 1rem;
             }
         }
         
@@ -260,8 +279,8 @@
         <!-- 左サイド (タイトル & 数字選択) -->
         <div class="left-panel">
             <header>
-                <h1 class="text-2xl md:text-3xl font-bold text-yellow-600">かずの れんしゅう</h1>
-                <div class="text-sm text-gray-500 font-bold mt-1">たくさん かいて おぼえよう！</div>
+                <h1 class="text-xl md:text-3xl font-bold text-yellow-600">かずの れんしゅう</h1>
+                <div class="text-xs md:text-sm text-gray-500 font-bold mt-1">たくさん かいて おぼえよう！</div>
             </header>
             <div id="num-bar">
                 <!-- JSで生成 -->
@@ -278,9 +297,9 @@
                         <span id="current-num-display" class="text-4xl text-blue-500 mr-2" style="font-family: 'M PLUS Rounded 1c'">1</span>
                     </div>
                     <div class="flex space-x-1">
-                        <button id="mode-single" class="btn btn-white text-xs py-1 px-3 active">ひとつ</button>
-                        <button id="mode-grid" class="btn btn-white text-xs py-1 px-3">いっぱい</button>
-                        <button id="mode-all" class="btn btn-white text-xs py-1 px-3">ぜんぶ</button>
+                        <button id="mode-single" class="btn btn-white text-xs py-1 px-2 md:px-3 active">ひとつ</button>
+                        <button id="mode-grid" class="btn btn-white text-xs py-1 px-2 md:px-3">いっぱい</button>
+                        <button id="mode-all" class="btn btn-white text-xs py-1 px-2 md:px-3">ぜんぶ</button>
                     </div>
                 </div>
 
@@ -349,12 +368,12 @@
         const synth = window.speechSynthesis;
         let japaneseVoice = null;
 
-        // 書き順データ
+        // 書き順データ（整形済み・指定の座標）
         const numberStrokeData = {
             '1': [ { numPos: { x: 0.6, y: 0.05 }, arrow: { x: 0.5, y: 0.28, angle: 90 } } ],
             '2': [ { numPos: { x: 0.25, y: 0.32 }, arrow: { x: 0.45, y: 0.35, angle: 340 } } ],
             '3': [ { numPos: { x: 0.25, y: 0.32 }, arrow: { x: 0.46, y: 0.32, angle: 0 } } ],
-            '4': [ { numPos: { x: 0.45, y: 0.25 }, arrow: { x: 0.5, y: 0.37, angle: 130 } }, { arrowOnly: { x: 0.6, y: 0.65, angle: 0 } }, { numPos: { x: 0.7, y: 0.35 }, arrow: { x: 0.58, y: 0.42, angle: 90 } } ],
+            '4': [ { numPos: { x: 0.45, y: 0.15 }, arrow: { x: 0.52, y: 0.35, angle: 130 } }, { arrowOnly: { x: 0.6, y: 0.65, angle: 0 } }, { numPos: { x: 0.7, y: 0.35 }, arrow: { x: 0.58, y: 0.42, angle: 90 } } ],
             '5': [ { numPos: { x: 0.28, y: 0.28 }, arrow: { x: 0.37, y: 0.45, angle: 90 } }, { numPos: { x: 0.45, y: 0.18 }, arrow: { x: 0.5, y: 0.34, angle: 0 } } ],
             '6': [ { numPos: { x: 0.55, y: 0.17 }, arrow: { x: 0.45, y: 0.35, angle: 180 } } ],
             '7': [ { numPos: { x: 0.15, y: 0.1 }, arrow: { x: 0.25, y: 0.27, angle: 90 } }, { numPos: { x: 0.35, y: 0.1 }, arrow: { x: 0.45, y: 0.2, angle: 0 } } ],
@@ -440,7 +459,7 @@
             practiceMode = mode;
             ['single', 'grid', 'all'].forEach(m => {
                 const btn = document.getElementById(`mode-${m}`);
-                btn.className = `btn btn-white text-xs py-1 px-3 ${m === mode ? 'active' : ''}`;
+                btn.className = `btn btn-white text-xs py-1 px-2 md:px-3 ${m === mode ? 'active' : ''}`;
                 
                 const container = document.getElementById(`container-${m}`);
                 if (m === mode) {
@@ -493,6 +512,11 @@
             
             updateCountDisplay();
             speak(`${num} の、れんしゅう！`);
+            
+            setTimeout(() => {
+                updateLayoutAndDraw();
+                clearAllDraws();
+            }, 50);
         }
 
         function updateCountDisplay() {
@@ -836,6 +860,7 @@
                 speak("あれ？ まだ かいてないかな？");
                 return;
             }
+
             playSuccess();
         }
 
