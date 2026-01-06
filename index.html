@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>かずのれんしゅう 1・2・3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800&family=Noto+Sans+JP:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', 'Noto Sans JP', sans-serif;
+            touch-action: none;
+            overscroll-behavior: none;
+            background-color: #FDF4E3;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .font-loader {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            font-weight: 800;
+        }
+
+        /* ユーティリティ */
+        .hidden { display: none !important; }
+
+        /* レイアウト構造 */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            padding: 0.5rem;
+            box-sizing: border-box;
+        }
+
+        /* 左パネル */
+        .left-panel {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 右パネル */
+        .right-panel {
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            min-height: 0; 
+            width: 100%;
+            position: relative;
+        }
+
+        /* 練習エリア内部 */
+        #practice-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .top-controls {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+        }
+
+        /* キャンバスを表示するメインエリア */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            padding: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* はみ出し防止 */
+        }
+
+        /* モードごとのコンテナ */
+        .mode-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 1つモードの枠 (正方形) */
+        #container-single-wrapper {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 4px solid #FCD34D;
+            box-sizing: border-box;
+            position: relative;
+            /* サイズはJSで指定 */
+        }
+
+        /* グリッドコンテナ (いっぱい・ぜんぶ) */
+        .grid-container-wrapper {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            gap: 8px;
+            box-sizing: border-box;
+        }
+
+        /* グリッドレイアウト定義 */
+        .grid-5x2 {
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+        .grid-2x5 {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+        }
+
+        /* グリッドアイテム */
+        .grid-item-common {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            border-radius: 0.5rem;
+            border: 2px solid #FCD34D;
+            overflow: hidden;
+            display: flex; /* Canvasをいっぱいに広げるため */
+        }
+
+        /* Canvas自体 */
+        .canvas-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        /* UIパーツ */
+        .num-btn {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background-color: white;
+            border: 3px solid #FCD34D;
+            border-radius: 50%;
+            color: #4B5563;
+            cursor: pointer;
+            transition: transform 0.1s;
+            flex-shrink: 0;
+        }
+        .num-btn.active {
+            background-color: #FCD34D;
+            color: white;
+            transform: scale(1.1);
+            border-color: #F59E0B;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 800;
+            transition: opacity 0.2s;
+            cursor: pointer;
+            user-select: none;
+        }
+        .btn:active { opacity: 0.7; }
+        .btn-white { background-color: white; border: 2px solid #D1D5DB; color: #374151; }
+        .btn-white.active { background-color: #3B82F6; border-color: #2563EB; color: white; }
+        .btn-red { background-color: #EF4444; color: white; }
+        .btn-green { background-color: #10B981; color: white; }
+        .btn-blue { background-color: #3B82F6; color: white; }
+        .btn-yellow { background-color: #F59E0B; color: white; }
+
+        .bottom-controls {
+            flex: 0 0 auto;
+            padding: 0.5rem 1rem;
+        }
+
+        #num-bar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            overflow-x: auto;
+        }
+
+        /* 横向きレイアウト */
+        @media (min-width: 768px) and (orientation: landscape) {
+            .app-container {
+                flex-direction: row;
+            }
+            .left-panel {
+                width: 300px;
+                justify-content: center;
+            }
+            #num-bar {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+        
+        .cracker {
+            position: absolute;
+            font-size: 4rem;
+            animation: burst 0.8s ease-out forwards;
+            pointer-events: none;
+            z-index: 100;
+        }
+        @keyframes burst {
+            0% { transform: scale(0.5) translate(0, 0); opacity: 1; }
+            100% { transform: scale(1.5) translate(var(--tx, 0), var(--ty, 0)); opacity: 0; }
+        }
+
+        #message-box {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 200;
+            text-align: center;
+            border: 5px solid #FCD34D;
+            min-width: 300px;
+            max-width: 90%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="font-loader">1234567890</div>
+
+    <div class="app-container">
+        <!-- 左サイド (タイトル & 数字選択) -->
+        <div class="left-panel">
+            <header>
+                <h1 class="text-2xl md:text-3xl font-bold text-yellow-600">かずの れんしゅう</h1>
+                <div class="text-sm text-gray-500 font-bold mt-1">たくさん かいて おぼえよう！</div>
+            </header>
+            <div id="num-bar">
+                <!-- JSで生成 -->
+            </div>
+        </div>
+
+        <!-- 右サイド (練習エリア) -->
+        <div class="right-panel">
+            <div id="practice-area" class="hidden">
+                
+                <!-- 上部コントロール -->
+                <div class="top-controls">
+                    <div class="text-xl font-bold text-gray-700 flex items-baseline">
+                        <span id="current-num-display" class="text-4xl text-blue-500 mr-2" style="font-family: 'M PLUS Rounded 1c'">1</span>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button id="mode-single" class="btn btn-white text-xs py-1 px-3 active">ひとつ</button>
+                        <button id="mode-grid" class="btn btn-white text-xs py-1 px-3">いっぱい</button>
+                        <button id="mode-all" class="btn btn-white text-xs py-1 px-3">ぜんぶ</button>
+                    </div>
+                </div>
+
+                <!-- キャンバスエリア -->
+                <div id="canvas-area-root" class="canvas-area">
+                    
+                    <!-- ひとつモード -->
+                    <div id="container-single" class="mode-container">
+                        <div id="container-single-wrapper">
+                            <canvas id="guide-canvas-single" class="canvas-layer"></canvas>
+                            <canvas id="draw-canvas-single" class="canvas-layer draw-canvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- いっぱいモード -->
+                    <div id="container-grid" class="mode-container hidden">
+                        <div id="grid-wrapper-grid" class="grid-container-wrapper">
+                            <!-- JSで生成 -->
+                        </div>
+                    </div>
+
+                    <!-- ぜんぶモード -->
+                    <div id="container-all" class="mode-container hidden">
+                        <div id="grid-wrapper-all" class="grid-container-wrapper">
+                            <!-- JSで生成 -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 下部コントロール -->
+                <div class="bottom-controls">
+                    <div class="grid grid-cols-2 gap-4 mb-2">
+                        <button id="btn-clear" class="btn btn-red text-lg">けす</button>
+                        <button id="btn-check" class="btn btn-green text-lg">できた！</button>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="text-base font-bold text-gray-500">
+                            できた数: <span id="success-count" class="text-red-500 text-2xl ml-1">0</span>
+                        </div>
+                        <button id="btn-next" class="btn btn-blue px-6">つぎへ ➡</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- その他UI -->
+    <div id="success-animation" class="fixed top-0 left-0 w-full h-full pointer-events-none z-50"></div>
+    <div id="message-box">
+        <p id="message-box-text" class="text-2xl font-bold text-gray-800 mb-6"></p>
+        <button id="message-box-ok" class="btn btn-yellow w-32 mx-auto">OK</button>
+    </div>
+
+    <script>
+        const strokeColors = ['#FF0000', '#2196F3', '#4CAF50', '#FF9800', '#9C27B0'];
+        const GUIDE_COLOR = '#CCCCCC'; 
+        
+        let currentNumber = '1';
+        let practiceStats = {};
+        let isDrawing = false;
+        let practiceMode = 'single'; 
+        let resizeTimer;
+        
+        const synth = window.speechSynthesis;
+        let japaneseVoice = null;
+
+        // 書き順データ
+        const numberStrokeData = {
+            '1': [ { numPos: { x: 0.6, y: 0.05 }, arrow: { x: 0.5, y: 0.28, angle: 90 } } ],
+            '2': [ { numPos: { x: 0.25, y: 0.32 }, arrow: { x: 0.45, y: 0.35, angle: 340 } } ],
+            '3': [ { numPos: { x: 0.25, y: 0.32 }, arrow: { x: 0.46, y: 0.32, angle: 0 } } ],
+            '4': [ { numPos: { x: 0.45, y: 0.25 }, arrow: { x: 0.5, y: 0.37, angle: 130 } }, { arrowOnly: { x: 0.6, y: 0.65, angle: 0 } }, { numPos: { x: 0.7, y: 0.35 }, arrow: { x: 0.58, y: 0.42, angle: 90 } } ],
+            '5': [ { numPos: { x: 0.28, y: 0.28 }, arrow: { x: 0.37, y: 0.45, angle: 90 } }, { numPos: { x: 0.45, y: 0.18 }, arrow: { x: 0.5, y: 0.34, angle: 0 } } ],
+            '6': [ { numPos: { x: 0.55, y: 0.17 }, arrow: { x: 0.45, y: 0.35, angle: 180 } } ],
+            '7': [ { numPos: { x: 0.15, y: 0.1 }, arrow: { x: 0.25, y: 0.27, angle: 90 } }, { numPos: { x: 0.35, y: 0.1 }, arrow: { x: 0.45, y: 0.2, angle: 0 } } ],
+            '8': [ { numPos: { x: 0.65, y: 0.27 }, arrow: { x: 0.55, y: 0.35, angle: 210 } }, { arrowOnly: { x: 0.35, y: 0.4, angle: 120 } }, { arrowOnly: { x: 0.5, y: 0.5, angle: 45 } }, { arrowOnly: { x: 0.65, y: 0.65, angle: 45 } }, { arrowOnly: { x: 0.5, y: 0.78, angle: 180 } }, { arrowOnly: { x: 0.35, y: 0.65, angle: 270 } }, { arrowOnly: { x: 0.5, y: 0.5, angle: 45 } } ],
+            '9': [ { numPos: { x: 0.8, y: 0.35 }, arrow: { x: 0.6, y: 0.3, angle: 230 } }, { arrowOnly: { x: 0.45, y: 0.3, angle: 180 } }, { arrowOnly: { x: 0.35, y: 0.4, angle: 90 } }, { arrowOnly: { x: 0.45, y: 0.58, angle: 0 } }, { arrowOnly: { x: 0.7, y: 0.45, angle: 280 } }, { arrowOnly: { x: 0.7, y: 0.7, angle: 100 } } ],
+            '10': [ { numPos: { x: 0.25, y: 0.2 }, arrow: { x: 0.25, y: 0.4, angle: 90 } }, { numPos: { x: 0.65, y: 0.25 }, arrow: { x: 0.6, y: 0.45, angle: 135 } }, { arrowOnly: { x: 0.59, y: 0.6, angle: 90 } }, { arrowOnly: { x: 0.7, y: 0.7, angle: 0 } }, { arrowOnly: { x: 0.82, y: 0.5, angle: 270 } } ]
+        };
+
+        // --- 初期化 ---
+        window.onload = function() {
+            setupSpeech();
+            initData();
+            createNumGrid();
+            
+            // いっぱいモードと全部モードのDOMを生成
+            createGridItems('grid-wrapper-grid', 'grid');
+            createGridItems('grid-wrapper-all', 'all');
+            
+            document.getElementById('mode-single').onclick = () => setMode('single');
+            document.getElementById('mode-grid').onclick = () => setMode('grid');
+            document.getElementById('mode-all').onclick = () => setMode('all');
+            
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    updateLayoutAndDraw();
+                }, 200); // 少し余裕を持たせる
+            });
+            
+            document.getElementById('btn-clear').addEventListener('click', clearAllDraws);
+            document.getElementById('btn-check').addEventListener('click', checkSuccess);
+            document.getElementById('btn-next').addEventListener('click', goNext);
+            document.getElementById('message-box-ok').addEventListener('click', () => {
+                 document.getElementById('message-box').style.display = 'none';
+            });
+            
+            // イベント登録
+            initCanvasEvents();
+
+            // フォント読み込み完了を待ってから初期表示
+            document.fonts.ready.then(() => {
+                selectNumber('1');
+            });
+        };
+
+        function initData() {
+            for(let i=1; i<=10; i++) practiceStats[i.toString()] = 0;
+            loadData();
+        }
+
+        // 共通のグリッド生成関数
+        function createGridItems(containerId, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for(let i=1; i<=10; i++) {
+                const div = document.createElement('div');
+                div.className = 'grid-item-common';
+                div.innerHTML = `
+                    <canvas id="g-${type}-${i}" class="canvas-layer w-full h-full"></canvas>
+                    <canvas id="d-${type}-${i}" class="canvas-layer draw-canvas w-full h-full"></canvas>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function initCanvasEvents() {
+            const attachEvents = (canvas) => {
+                canvas.addEventListener('mousedown', start);
+                canvas.addEventListener('mousemove', move);
+                canvas.addEventListener('mouseup', end);
+                canvas.addEventListener('mouseout', end);
+                canvas.addEventListener('touchstart', start, {passive: false});
+                canvas.addEventListener('touchmove', move, {passive: false});
+                canvas.addEventListener('touchend', end);
+            };
+
+            document.querySelectorAll('.draw-canvas').forEach(canvas => {
+                attachEvents(canvas);
+            });
+        }
+
+        function setMode(mode) {
+            practiceMode = mode;
+            ['single', 'grid', 'all'].forEach(m => {
+                const btn = document.getElementById(`mode-${m}`);
+                btn.className = `btn btn-white text-xs py-1 px-3 ${m === mode ? 'active' : ''}`;
+                
+                const container = document.getElementById(`container-${m}`);
+                if (m === mode) {
+                    container.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden');
+                }
+            });
+
+            if (mode === 'all') {
+                document.getElementById('current-num-display').textContent = '1-10';
+                speak('ぜんぶの すうじに チャレンジ！');
+            } else {
+                document.getElementById('current-num-display').textContent = currentNumber;
+            }
+            
+            // ★修正★ 少し待ってから描画することでレイアウト確定を待つ
+            setTimeout(() => {
+                updateLayoutAndDraw();
+                clearAllDraws();
+            }, 100);
+        }
+
+        function createNumGrid() {
+            const grid = document.getElementById('num-bar');
+            grid.innerHTML = '';
+            for(let i=1; i<=10; i++) {
+                const btn = document.createElement('div');
+                btn.className = 'num-btn relative';
+                btn.textContent = i;
+                btn.id = `num-btn-${i}`;
+                btn.onclick = () => selectNumber(i.toString());
+                grid.appendChild(btn);
+            }
+        }
+
+        function selectNumber(num) {
+            if(practiceMode === 'all') {
+                setMode('single');
+            }
+            practiceMode = 'single';
+            setMode('single');
+
+            currentNumber = num.toString();
+            document.getElementById('practice-area').classList.remove('hidden');
+            
+            document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`num-btn-${num}`).classList.add('active');
+            document.getElementById('current-num-display').textContent = num;
+            
+            updateCountDisplay();
+            speak(`${num} の、れんしゅう！`);
+        }
+
+        function updateCountDisplay() {
+            if (practiceMode === 'all') return;
+
+            const count = practiceStats[currentNumber];
+            document.getElementById('success-count').textContent = count;
+        }
+
+        function goNext() {
+            let next = parseInt(currentNumber) + 1;
+            if (next > 10) next = 1;
+            selectNumber(next.toString());
+        }
+
+        // --- リサイズロジック (大幅修正) ---
+        function updateLayoutAndDraw() {
+            const canvasArea = document.getElementById('canvas-area-root');
+            if (!canvasArea) return;
+            
+            // ★重要★ 親要素のサイズを確実に取得
+            const areaWidth = canvasArea.offsetWidth;
+            const areaHeight = canvasArea.offsetHeight;
+            
+            if (areaWidth === 0 || areaHeight === 0) {
+                // まだ表示されていない場合は少し待って再試行
+                setTimeout(updateLayoutAndDraw, 100);
+                return;
+            }
+
+            if (practiceMode === 'single') {
+                // 正方形を最大化
+                const size = Math.min(areaWidth, areaHeight) - 8; 
+                const wrapper = document.getElementById('container-single-wrapper');
+                
+                wrapper.style.width = size + 'px';
+                wrapper.style.height = size + 'px';
+
+                const guide = document.getElementById('guide-canvas-single');
+                const draw = document.getElementById('draw-canvas-single');
+                applyCanvasSize(guide, draw, size, size, currentNumber);
+
+            } else {
+                resizeGridMode(areaWidth, areaHeight, practiceMode);
+            }
+
+            // Canvasを作り直すわけではないので、イベントの再設定は不要だが、念のため
+            // initCanvasEvents(); 
+        }
+
+        function resizeGridMode(w, h, type) {
+            const wrapper = document.getElementById(`grid-wrapper-${type}`);
+            
+            let cols = 5, rows = 2;
+            if (h > w) { // 縦長画面なら 2x5
+                cols = 2; rows = 5;
+                wrapper.className = 'grid-container-wrapper grid-2x5';
+            } else {
+                cols = 5; rows = 2;
+                wrapper.className = 'grid-container-wrapper grid-5x2';
+            }
+            
+            // 各セルのサイズを計算 (gap 8px考慮)
+            const gap = 8;
+            const cellW = (w - (gap * (cols - 1))) / cols; 
+            const cellH = (h - (gap * (rows - 1))) / rows;
+            
+            // 整数に丸める
+            const finalW = Math.floor(cellW);
+            const finalH = Math.floor(cellH);
+
+            for(let i=1; i<=10; i++) {
+                const guide = document.getElementById(`g-${type}-${i}`);
+                const draw = document.getElementById(`d-${type}-${i}`);
+                const targetNum = (type === 'grid') ? currentNumber : i.toString();
+                
+                applyCanvasSize(guide, draw, finalW, finalH, targetNum);
+            }
+        }
+
+        function applyCanvasSize(guide, draw, w, h, char) {
+            if (!guide || !draw) return;
+            if (w <= 0 || h <= 0) return;
+
+            // Canvasサイズを更新
+            guide.width = w;
+            guide.height = h;
+            draw.width = w;
+            draw.height = h;
+            
+            const ctxDraw = draw.getContext('2d');
+            ctxDraw.lineCap = 'round';
+            ctxDraw.lineJoin = 'round';
+            ctxDraw.strokeStyle = '#0000FF';
+            
+            const minSide = Math.min(w, h);
+            if (practiceMode === 'all' || practiceMode === 'grid') {
+                 ctxDraw.lineWidth = Math.max(4, minSide / 25);
+            } else {
+                 ctxDraw.lineWidth = Math.max(10, minSide / 30);
+            }
+            
+            drawGuideOnCanvas(guide, char, w, h);
+        }
+
+        function getActiveCanvases() {
+            if (practiceMode === 'single') {
+                return [{
+                    draw: document.getElementById('draw-canvas-single'),
+                    width: document.getElementById('draw-canvas-single').width
+                }];
+            } else {
+                const type = practiceMode === 'grid' ? 'grid' : 'all';
+                const list = [];
+                for(let i=1; i<=10; i++) {
+                    const d = document.getElementById(`d-${type}-${i}`);
+                    if(d) list.push({ draw: d, width: d.width });
+                }
+                return list;
+            }
+        }
+
+        function drawGuideOnCanvas(canvas, char, w, h) {
+            const ctx = canvas.getContext('2d');
+            const size = Math.min(w, h);
+            const offsetX = (w - size) / 2;
+            const offsetY = (h - size) / 2;
+
+            ctx.clearRect(0, 0, w, h);
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY); 
+
+            // 十字
+            ctx.save();
+            ctx.strokeStyle = '#E5E7EB';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath();
+            ctx.moveTo(size/2, 0); ctx.lineTo(size/2, size);
+            ctx.moveTo(0, size/2); ctx.lineTo(size, size/2);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.save();
+            ctx.fillStyle = GUIDE_COLOR;
+
+            if (char === '1') {
+                drawStickOne(ctx, size, 0.5, 0.5);
+            } else if (char === '10') {
+                drawStickOne(ctx, size, 0.25, 0.53, 0.6); 
+                const fontSpec = `800 ${size * 0.55}px 'M PLUS Rounded 1c', sans-serif`;
+                ctx.font = fontSpec;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = GUIDE_COLOR;
+                ctx.fillText('0', size * 0.7, size * 0.55);
+                drawStrokes(ctx, size, char); 
+                
+            } else if (char === '7') {
+                drawCustomSeven(ctx, size); 
+            } else {
+                const fontSpec = `800 ${size * 0.7}px 'M PLUS Rounded 1c', sans-serif`;
+                ctx.font = fontSpec;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = GUIDE_COLOR;
+                ctx.fillText(char, size / 2, size / 2 + (size * 0.05));
+                drawStrokes(ctx, size, char);
+            }
+            
+            if (char === '7' || char === '1') {
+                drawStrokes(ctx, size, char);
+            }
+            
+            ctx.restore(); 
+        }
+
+        // --- 描画ヘルパー ---
+        function drawStickOne(ctx, size, centerXRatio, centerYRatio, scale = 1.0) {
+            const barWidth = size * 0.08 * scale;
+            const barHeight = size * 0.7 * scale;
+            const x = (size * centerXRatio) - (barWidth / 2);
+            const y = (size * centerYRatio) - (barHeight / 2);
+            ctx.beginPath();
+            if(ctx.roundRect) ctx.roundRect(x, y, barWidth, barHeight, barWidth/2);
+            else ctx.rect(x, y, barWidth, barHeight); // fallback
+            ctx.fill();
+        }
+
+        function drawCustomSeven(ctx, size) {
+            const x1 = size * 0.25;
+            const y1 = size * 0.30;
+            const x2 = size * 0.25;
+            const y2 = size * 0.20;
+            const x3 = size * 0.75;
+            const y3 = size * 0.20;
+            const x4 = size * 0.45;
+            const y4 = size * 0.85;
+
+            ctx.beginPath();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = size * 0.095; 
+            ctx.strokeStyle = GUIDE_COLOR;
+
+            ctx.moveTo(x1, y1); 
+            ctx.lineTo(x2, y2); 
+            ctx.lineTo(x3, y3); 
+            ctx.lineTo(x4, y4); 
+            
+            ctx.stroke();
+        }
+
+        function drawStrokes(ctx, size, char) {
+            const strokes = numberStrokeData[char];
+            if (!strokes) return;
+
+            const numSize = size * 0.08;
+            const arrowLength = size * 0.12;
+            
+            ctx.font = `bold ${numSize}px 'M PLUS Rounded 1c', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineWidth = Math.max(2, size * 0.008); 
+
+            let strokeCount = 0;
+
+            strokes.forEach(s => {
+                const color = strokeColors[strokeCount % strokeColors.length];
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+
+                if (s.arrowOnly) {
+                    const prevColor = strokeColors[Math.max(0, strokeCount-1) % strokeColors.length];
+                    ctx.fillStyle = prevColor;
+                    ctx.strokeStyle = prevColor;
+                    drawArrow(ctx, s.arrowOnly.x * size, s.arrowOnly.y * size, s.arrowOnly.angle, arrowLength);
+                } else {
+                    strokeCount++;
+                    const color = strokeColors[(strokeCount-1) % strokeColors.length];
+                    ctx.fillStyle = color;
+                    ctx.strokeStyle = color;
+
+                    const nx = s.numPos.x * size;
+                    const ny = s.numPos.y * size;
+                    ctx.fillText(strokeCount, nx, ny);
+                    ctx.beginPath();
+                    ctx.arc(nx, ny, numSize * 0.8, 0, Math.PI*2);
+                    ctx.stroke();
+
+                    drawArrow(ctx, s.arrow.x * size, s.arrow.y * size, s.arrow.angle, arrowLength);
+                }
+            });
+        }
+
+        function drawArrow(ctx, x, y, angleDeg, length) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angleDeg * Math.PI / 180);
+            
+            ctx.beginPath();
+            ctx.moveTo(-length, 0);
+            ctx.lineTo(0, 0);
+            ctx.stroke();
+            
+            const headLen = length * 0.45;
+            const headWidth = headLen * 0.5;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-headLen, -headWidth);
+            ctx.lineTo(-headLen * 0.6, 0);
+            ctx.lineTo(-headLen, headWidth);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // --- ペン処理 ---
+        function start(e) {
+            e.preventDefault();
+            isDrawing = true;
+            const canvas = e.target;
+            const ctx = canvas.getContext('2d');
+            const pos = getPos(e, canvas);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+        function move(e) {
+            e.preventDefault();
+            if(!isDrawing) return;
+            const canvas = e.target;
+            const ctx = canvas.getContext('2d');
+            const pos = getPos(e, canvas);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+        function end(e) {
+             e.preventDefault();
+             isDrawing = false; 
+        }
+
+        function getPos(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (cx - rect.left) * (canvas.width / rect.width),
+                y: (cy - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function clearAllDraws() {
+            getActiveCanvases().forEach(set => {
+                if(set.draw) {
+                    const ctx = set.draw.getContext('2d');
+                    ctx.clearRect(0, 0, set.draw.width, set.draw.height);
+                }
+            });
+        }
+
+        function checkSuccess() {
+            let totalDrawn = 0;
+            const sets = getActiveCanvases();
+            
+            sets.forEach(set => {
+                const ctx = set.draw.getContext('2d');
+                const size = set.width;
+                if(size === 0) return;
+                const imgData = ctx.getImageData(0, 0, size, size).data;
+                let drawn = 0;
+                for(let i=0; i<imgData.length; i+=4) {
+                    if(imgData[i+3] > 0) drawn++;
+                }
+                if(drawn > size * 2) totalDrawn++;
+            });
+
+            if(totalDrawn === 0) {
+                speak("あれ？ まだ かいてないかな？");
+                return;
+            }
+            playSuccess();
+        }
+
+        function playSuccess() {
+            if(practiceMode !== 'all') {
+                practiceStats[currentNumber]++;
+                updateCountDisplay();
+                saveData(); 
+            }
+            const container = document.getElementById('success-animation');
+            const crackers = ['🎉', '✨', '💯', '💮'];
+            for(let i=0; i<10; i++) {
+                const el = document.createElement('div');
+                el.className = 'cracker';
+                el.textContent = crackers[Math.floor(Math.random()*crackers.length)];
+                el.style.left = '50%';
+                el.style.top = '50%';
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 100 + Math.random() * 200;
+                el.style.setProperty('--tx', Math.cos(angle)*dist + 'px');
+                el.style.setProperty('--ty', Math.sin(angle)*dist + 'px');
+                container.appendChild(el);
+                setTimeout(() => el.remove(), 1000);
+            }
+            speak("じょうず！");
+            setTimeout(() => {
+                if(practiceMode !== 'all') {
+                    clearAllDraws();
+                    speak("もういっかい！");
+                }
+            }, 1500);
+        }
+
+        function setupSpeech() {
+            const voices = synth.getVoices();
+            japaneseVoice = voices.find(v => v.lang === 'ja-JP') || voices.find(v => v.lang.startsWith('ja'));
+            if(synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = () => {
+                    const vs = synth.getVoices();
+                    japaneseVoice = vs.find(v => v.lang === 'ja-JP');
+                };
+            }
+        }
+
+        function speak(text) {
+            if (!japaneseVoice) { return; }
+            if (synth.speaking) { synth.cancel(); }
+            let utterThis = new SpeechSynthesisUtterance(text);
+            utterThis.voice = japaneseVoice;
+            utterThis.pitch = 1.1;
+            utterThis.rate = 1.0;
+            synth.speak(utterThis);
+        }
+
+        function saveData() { localStorage.setItem('numberAppData', JSON.stringify(practiceStats)); }
+        function loadData() {
+            const d = localStorage.getItem('numberAppData');
+            if(d) practiceStats = JSON.parse(d);
+        }
+    </script>
+</body>
+</html>
